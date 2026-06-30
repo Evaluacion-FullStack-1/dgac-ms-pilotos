@@ -4,6 +4,8 @@ import cl.dgac.pilotos.dto.PilotoRequestDTO;
 import cl.dgac.pilotos.dto.PilotoResponseDTO;
 import cl.dgac.pilotos.service.PilotoService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,7 +44,21 @@ public class PilotoController {
         return ResponseEntity.ok(pilotoService.buscarPorId(id));
     }
 
-    @Operation(summary = "Crear nuevo piloto", description = "Registra un nuevo piloto en la base de datos de la DGAC.")
+    @Operation(
+            summary = "Crear nuevo piloto", 
+            description = "Registra un nuevo piloto en la base de datos de la DGAC.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos requeridos para registrar un nuevo piloto con su licencia",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Ejemplo de Registro",
+                                    value = "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"numeroLicencia\": \"LIC-DGAC-2026-99A\",\n  \"telefono\": \"+56912345678\",\n  \"activo\": true\n}"
+                            )
+                    )
+            )
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Piloto creado exitosamente"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos (ej. licencia duplicada)")
@@ -53,7 +69,21 @@ public class PilotoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(pilotoCreado);
     }
 
-    @Operation(summary = "Actualizar piloto", description = "Modifica los datos de un piloto existente en el sistema.")
+    @Operation(
+            summary = "Actualizar piloto", 
+            description = "Modifica los datos de un piloto existente en el sistema.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Nuevos parámetros del piloto a actualizar",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Ejemplo de Actualización",
+                                    value = "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"numeroLicencia\": \"LIC-DGAC-2026-99A\",\n  \"telefono\": \"+56987654321\",\n  \"activo\": false\n}"
+                            )
+                    )
+            )
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Piloto actualizado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Piloto no encontrado"),

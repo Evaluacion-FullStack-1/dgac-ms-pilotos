@@ -8,6 +8,7 @@ import cl.dgac.pilotos.model.Piloto;
 import cl.dgac.pilotos.repository.PilotoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,14 +17,16 @@ public class PilotoService {
 
     private final PilotoRepository pilotoRepository;
     private final PilotoMapper pilotoMapper;
-    private final WebClient.Builder webClientBuilder;
+    
+    // Inyectamos el WebClient pre-configurado para balanceo de carga
+    private final WebClient webClientUsuarios;
 
     public PilotoService(PilotoRepository pilotoRepository,
                          PilotoMapper pilotoMapper,
-                         WebClient.Builder webClientBuilder) {
+                         WebClient webClientUsuarios) {
         this.pilotoRepository = pilotoRepository;
         this.pilotoMapper = pilotoMapper;
-        this.webClientBuilder = webClientBuilder;
+        this.webClientUsuarios = webClientUsuarios;
     }
 
     public List<PilotoResponseDTO> listarPilotos() {
@@ -86,9 +89,10 @@ public class PilotoService {
     }
 
     public String consultarMicroservicioUsuarios() {
-        return webClientBuilder.build()
+        // Usamos la ruta relativa y el cliente inyectado; Eureka resuelve la IP y puerto
+        return webClientUsuarios
                 .get()
-                .uri("http://localhost:8081/api/usuarios")
+                .uri("/api/usuarios")
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
