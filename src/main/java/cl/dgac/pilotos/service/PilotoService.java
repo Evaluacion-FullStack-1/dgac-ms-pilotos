@@ -7,7 +7,7 @@ import cl.dgac.pilotos.mapper.PilotoMapper;
 import cl.dgac.pilotos.model.Piloto;
 import cl.dgac.pilotos.repository.PilotoRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestTemplate; // Importación corregida a RestTemplate
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,27 +18,27 @@ public class PilotoService {
     private final PilotoRepository pilotoRepository;
     private final PilotoMapper pilotoMapper;
     
-    // Inyectamos el WebClient pre-configurado para balanceo de carga
-    private final WebClient webClientUsuarios;
+    // Inyectamos el RestTemplate pre-configurado para balanceo de carga con Eureka
+    private final RestTemplate restTemplate;
 
     public PilotoService(PilotoRepository pilotoRepository,
                          PilotoMapper pilotoMapper,
-                         WebClient webClientUsuarios) {
+                         RestTemplate restTemplate) { // Constructor actualizado
         this.pilotoRepository = pilotoRepository;
         this.pilotoMapper = pilotoMapper;
-        this.webClientUsuarios = webClientUsuarios;
+        this.restTemplate = restTemplate;
     }
 
     public List<PilotoResponseDTO> listarPilotos() {
         return pilotoRepository.findAll()
-                .stream()
-                .map(pilotoMapper::toDTO)
-                .collect(Collectors.toList());
+            .stream()
+            .map(pilotoMapper::toDTO)
+            .collect(Collectors.toList());
     }
 
     public PilotoResponseDTO buscarPorId(Long id) {
         Piloto piloto = pilotoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con ID: " + id));
 
         return pilotoMapper.toDTO(piloto);
     }
@@ -52,7 +52,7 @@ public class PilotoService {
 
     public PilotoResponseDTO actualizarPiloto(Long id, PilotoRequestDTO dto) {
         Piloto piloto = pilotoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con ID: " + id));
 
         pilotoMapper.updateEntity(piloto, dto);
         Piloto pilotoActualizado = pilotoRepository.save(piloto);
@@ -62,39 +62,37 @@ public class PilotoService {
 
     public void eliminarPiloto(Long id) {
         Piloto piloto = pilotoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con ID: " + id));
 
         pilotoRepository.delete(piloto);
     }
 
     public PilotoResponseDTO buscarPorLicencia(String numeroLicencia) {
         Piloto piloto = pilotoRepository.findByNumeroLicencia(numeroLicencia)
-                .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con licencia: " + numeroLicencia));
+            .orElseThrow(() -> new ResourceNotFoundException("Piloto no encontrado con licencia: " + numeroLicencia));
 
         return pilotoMapper.toDTO(piloto);
     }
 
     public List<PilotoResponseDTO> listarPorEstado(Boolean activo) {
         return pilotoRepository.findByActivo(activo)
-                .stream()
-                .map(pilotoMapper::toDTO)
-                .collect(Collectors.toList());
+            .stream()
+            .map(pilotoMapper::toDTO)
+            .collect(Collectors.toList());
     }
 
     public List<PilotoResponseDTO> buscarPorApellido(String apellido) {
         return pilotoRepository.buscarPorApellido(apellido)
-                .stream()
-                .map(pilotoMapper::toDTO)
-                .collect(Collectors.toList());
+            .stream()
+            .map(pilotoMapper::toDTO)
+            .collect(Collectors.toList());
     }
 
     public String consultarMicroservicioUsuarios() {
-        // Usamos la ruta relativa y el cliente inyectado; Eureka resuelve la IP y puerto
-        return webClientUsuarios
-                .get()
-                .uri("/api/usuarios")
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+        // La URL mágica: usamos el nombre del servicio en Eureka y la ruta del endpoint
+        String url = "http://dgac-ms-usuarios/api/usuarios";
+        
+        // Hacemos la petición directa con RestTemplate
+        return restTemplate.getForObject(url, String.class);
     }
 }
